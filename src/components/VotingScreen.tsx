@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { motion, PanInfo } from 'framer-motion';
+import { motion, PanInfo, useMotionValue } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Participant, Vote } from '@/lib/types';
 import { CATEGORIES, getAvatarColor } from '@/lib/constants';
@@ -274,7 +274,8 @@ function PlacedHeadOnSpectrum({
   const startPositionRef = useRef({ x: position, y: yPercent });
   const bgColor = getAvatarColor(index);
   const headSize = 56;
-  const scaleFactor = isDragging ? 1.2 : 1; // Account for grow effect
+  const dragX = useMotionValue(0);
+  const dragY = useMotionValue(0);
 
   // Update start position when position changes (but not during drag)
   useEffect(() => {
@@ -286,6 +287,8 @@ function PlacedHeadOnSpectrum({
   const handleDragStart = () => {
     setIsDragging(true);
     onDragStateChange?.(true);
+    dragX.jump(0);
+    dragY.jump(0);
   };
 
   const handleDrag = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -302,12 +305,9 @@ function PlacedHeadOnSpectrum({
     const newX = startPositionRef.current.x + xPercentChange;
     const newY = startPositionRef.current.y + yPercentChange;
 
-    // Clamp to bounds (matching the constraints)
+    // Clamp to bounds
     const clampedX = Math.max(2, Math.min(98, newX));
     const clampedY = Math.max(-95, Math.min(95, newY));
-
-    // For visual feedback during drag, we could update a visual indicator
-    // But we don't update the actual state until drag ends
   };
 
   const handleDragEndEvent = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -331,36 +331,31 @@ function PlacedHeadOnSpectrum({
     const clampedY = Math.max(-95, Math.min(95, finalY));
 
     onDragEnd(participant.id, clampedX, clampedY);
+    dragX.jump(0);
+    dragY.jump(0);
   };
 
-  const xPos = (position / 100) * containerWidth - (headSize * scaleFactor) / 2;
-  const yPos = (containerHeight / 2) + (yPercent * containerHeight / 200) - (headSize * scaleFactor) / 2;
+  const xPos = (position / 100) * containerWidth - headSize / 2;
+  const yPos = (containerHeight / 2) + (yPercent * containerHeight / 200) - headSize / 2;
 
-  // Simpler constraints: just allow dragging to container edges
-  // Account for the scaled size when calculating constraints
-  const scaledHeadSize = headSize * scaleFactor;
-  const dragConstraints = useMemo(() => ({
-    left: -(xPos),
-    right: containerWidth - xPos - scaledHeadSize,
-    top: -(yPos),
-    bottom: containerHeight - yPos - scaledHeadSize,
-  }), [xPos, yPos, containerWidth, containerHeight, scaledHeadSize]);
+
 
   return (
     <motion.div
       drag
       dragMomentum={false}
       dragElastic={0}
-      dragConstraints={dragConstraints}
       onDragStart={handleDragStart}
       onDrag={handleDrag}
       onDragEnd={handleDragEndEvent}
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: isDragging ? 1.2 : 1, opacity: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       style={{
         position: 'absolute',
         left: xPos,
         top: yPos,
+        x: dragX,
+        y: dragY,
         zIndex: isDragging ? 100 : 10,
         width: headSize,
         height: headSize,
@@ -372,6 +367,8 @@ function PlacedHeadOnSpectrum({
     >
       <motion.div
         className="w-full h-full rounded-full flex items-center justify-center font-bold text-white text-base shadow-lg"
+        animate={{ scale: isDragging ? 1.2 : 1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         style={{
           backgroundColor: participant.avatar_url ? 'transparent' : bgColor,
           backgroundImage: participant.avatar_url ? `url(${participant.avatar_url})` : undefined,
@@ -484,7 +481,9 @@ export function VotingScreen({
   // Sync localHeads to physics simulation (preserve Y positions from physics)
   // Skip during drag to prevent physics from interfering with user input
   useEffect(() => {
-    if (isAnyDragging) return; // Don't sync physics while user is dragging
+    if (isAnyDragging) {
+      return; // Don't sync physics while user is dragging
+    }
 
     const currentPositions = positions;
     const headsWithPhysicsY = localHeads.map(h => {
@@ -528,7 +527,9 @@ export function VotingScreen({
       return newHeads;
     });
     // Re-trigger physics after drag settles
-    setTimeout(() => triggerSimulation(), 50);
+    setTimeout(() => {
+      triggerSimulation();
+    }, 50);
   }, [onVote, updateHeads, triggerSimulation]);
 
   const unplacedTargets = targets.filter(t => !votes.find(v => v.target_id === t.id));
