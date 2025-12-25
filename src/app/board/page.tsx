@@ -129,6 +129,110 @@ function useForceSimulation(
 }
 
 type ViewMode = 'spectrum' | 'spotlight';
+type PeekerPositionType = 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
+// Peeker component with position-aware animations
+function PeekerAvatar({
+  peeker,
+  position,
+  colorIndex,
+}: {
+  peeker: Participant;
+  position: PeekerPositionType;
+  colorIndex: number;
+}) {
+  const getAnimationProps = () => {
+    switch (position) {
+      case 'left':
+        return {
+          className: 'fixed left-0 top-1/3 z-50',
+          initial: { x: -250, rotate: 45 },
+          animate: { x: -60, rotate: 35 },
+          exit: { x: -250, rotate: 45 },
+        };
+      case 'right':
+        return {
+          className: 'fixed right-0 top-1/3 z-50',
+          initial: { x: 250, rotate: -45 },
+          animate: { x: 60, rotate: -35 },
+          exit: { x: 250, rotate: -45 },
+        };
+      case 'top':
+        return {
+          className: 'fixed top-0 left-1/2 -translate-x-1/2 z-50',
+          initial: { y: -250, rotate: 180 },
+          animate: { y: -60, rotate: 180 },
+          exit: { y: -250, rotate: 180 },
+        };
+      case 'bottom':
+        return {
+          className: 'fixed bottom-0 left-1/2 -translate-x-1/2 z-50',
+          initial: { y: 250, rotate: 0 },
+          animate: { y: 60, rotate: 0 },
+          exit: { y: 250, rotate: 0 },
+        };
+      case 'top-left':
+        return {
+          className: 'fixed top-0 left-0 z-50',
+          initial: { x: -200, y: -200, rotate: 135 },
+          animate: { x: -40, y: -40, rotate: 125 },
+          exit: { x: -200, y: -200, rotate: 135 },
+        };
+      case 'top-right':
+        return {
+          className: 'fixed top-0 right-0 z-50',
+          initial: { x: 200, y: -200, rotate: -135 },
+          animate: { x: 40, y: -40, rotate: -125 },
+          exit: { x: 200, y: -200, rotate: -135 },
+        };
+      case 'bottom-left':
+        return {
+          className: 'fixed bottom-0 left-0 z-50',
+          initial: { x: -200, y: 200, rotate: 45 },
+          animate: { x: -40, y: 40, rotate: 35 },
+          exit: { x: -200, y: 200, rotate: 45 },
+        };
+      case 'bottom-right':
+        return {
+          className: 'fixed bottom-0 right-0 z-50',
+          initial: { x: 200, y: 200, rotate: -45 },
+          animate: { x: 40, y: 40, rotate: -35 },
+          exit: { x: 200, y: 200, rotate: -45 },
+        };
+    }
+  };
+
+  const props = getAnimationProps();
+
+  return (
+    <motion.div
+      initial={props.initial}
+      animate={props.animate}
+      exit={props.exit}
+      transition={{
+        type: 'spring',
+        stiffness: 200,
+        damping: 20,
+      }}
+      className={props.className}
+      style={{ transformOrigin: 'center center' }}
+    >
+      <div
+        className="w-48 h-48 rounded-full bg-cover bg-center shadow-2xl border-4 border-white/30"
+        style={{
+          backgroundImage: peeker.avatar_url ? `url(${peeker.avatar_url})` : undefined,
+          backgroundColor: peeker.avatar_url ? undefined : getAvatarColor(colorIndex),
+        }}
+      >
+        {!peeker.avatar_url && (
+          <div className="w-full h-full flex items-center justify-center text-white font-bold text-5xl rounded-full">
+            {peeker.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
 
 function BoardContent() {
   const searchParams = useSearchParams();
@@ -145,8 +249,9 @@ function BoardContent() {
   const [activeCategory, setActiveCategory] = useState<CategoryIndex>(0);
   const [spotlightPerson, setSpotlightPerson] = useState<Participant | null>(null);
   
-  // Peeker state - random head that peeks in from the side
+  // Peeker state - random head that peeks in from edges
   const [peeker, setPeeker] = useState<Participant | null>(null);
+  const [peekerPosition, setPeekerPosition] = useState<'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>('left');
 
   // Load session data
   const aggregateVotes = useCallback((votes: Vote[]) => {
@@ -321,29 +426,34 @@ function BoardContent() {
     return () => clearInterval(interval);
   }, [session, rotateView]);
 
-  // Random peeker effect - a head peeks in from the left every ~5 minutes
+  // Random peeker effect - a head peeks in from random edges every 3 minutes
   useEffect(() => {
     if (!session || participants.length === 0) return;
 
+    const positions: Array<'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'> = [
+      'left', 'right', 'top', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right'
+    ];
+
     const triggerPeek = () => {
-      // Pick a random participant
       if (participants.length === 0) return;
       const randomPerson = participants[Math.floor(Math.random() * participants.length)];
+      const randomPosition = positions[Math.floor(Math.random() * positions.length)];
+      setPeekerPosition(randomPosition);
       setPeeker(randomPerson);
-      
+
       // Hide after 3 seconds
       setTimeout(() => {
         setPeeker(null);
       }, 3000);
     };
 
-    // Initial delay of 30 seconds, then every ~5 minutes
+    // Initial delay of 30 seconds, then every 3 minutes
     const initialTimeout = setTimeout(() => {
       triggerPeek();
-      
+
       const interval = setInterval(() => {
         triggerPeek();
-      }, 300000); // 5 minutes
+      }, 180000); // 3 minutes
 
       return () => clearInterval(interval);
     }, 30000);
@@ -429,35 +539,14 @@ function BoardContent() {
   // Live view
   return (
     <main className="min-h-screen p-8 flex flex-col overflow-hidden relative">
-      {/* Peeker - random head that peeks in from the left */}
+      {/* Peeker - random head that peeks in from edges */}
       <AnimatePresence>
         {peeker && (
-          <motion.div
-            initial={{ x: -250, rotate: 60 }}
-            animate={{ x: -60, rotate: 50 }}
-            exit={{ x: -250, rotate: 60 }}
-            transition={{ 
-              type: 'spring', 
-              stiffness: 200, 
-              damping: 20,
-            }}
-            className="fixed left-0 top-1/4 z-50"
-            style={{ transformOrigin: 'center center' }}
-          >
-            <div
-              className="w-56 h-56 rounded-full bg-cover bg-center"
-              style={{
-                backgroundImage: peeker.avatar_url ? `url(${peeker.avatar_url})` : undefined,
-                backgroundColor: peeker.avatar_url ? undefined : getAvatarColor(participants.indexOf(peeker)),
-              }}
-            >
-              {!peeker.avatar_url && (
-                <div className="w-full h-full flex items-center justify-center text-white font-bold text-6xl rounded-full">
-                  {peeker.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                </div>
-              )}
-            </div>
-          </motion.div>
+          <PeekerAvatar
+            peeker={peeker}
+            position={peekerPosition}
+            colorIndex={participants.indexOf(peeker)}
+          />
         )}
       </AnimatePresence>
 

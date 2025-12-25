@@ -58,6 +58,25 @@ export interface VoteState {
   [targetId: string]: number; // position 0-100
 }
 
+// Award types for the reveal finale
+export type AwardType =
+  | 'most_extroverted' | 'most_introverted'
+  | 'most_intuitive' | 'most_observant'
+  | 'most_rational' | 'most_feeling'
+  | 'most_organized' | 'most_explorer'
+  | 'best_guesser'
+  | 'most_mysterious'
+  | 'most_obvious';
+
+export interface Award {
+  type: AwardType;
+  emoji: string;
+  title: string;
+  description: string;
+  winner: Participant;
+  value?: number;
+}
+
 // Database row types for Supabase
 export interface Database {
   public: {

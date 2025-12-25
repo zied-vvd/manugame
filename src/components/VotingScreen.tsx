@@ -2,15 +2,21 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, PanInfo } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Participant, Vote } from '@/lib/types';
 import { CATEGORIES, getAvatarColor } from '@/lib/constants';
 
 interface VotingScreenProps {
   category: (typeof CATEGORIES)[number];
+  categoryIndex: number;
   targets: Participant[];
   votes: Vote[];
   onVote: (targetId: string, position: number) => void;
   onBack: () => void;
+  onNext: () => void;
+  onPrevious: () => void;
+  isFirstCategory: boolean;
+  isLastCategory: boolean;
 }
 
 interface PlacedHead {
@@ -303,10 +309,15 @@ function PlacedHeadOnSpectrum({
 
 export function VotingScreen({
   category,
+  categoryIndex,
   targets,
   votes,
   onVote,
   onBack,
+  onNext,
+  onPrevious,
+  isFirstCategory,
+  isLastCategory,
 }: VotingScreenProps) {
   const spectrumRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -412,20 +423,37 @@ export function VotingScreen({
   const unplacedTargets = targets.filter(t => !votes.find(v => v.target_id === t.id));
   const placedTargets = targets.filter(t => votes.find(v => v.target_id === t.id));
 
+  const placedCount = votes.length;
+  const totalCount = targets.length;
+
   return (
       <main className="min-h-screen flex flex-col">
-        {/* Header */}
+        {/* Header with step indicator */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-        className="p-4 glass-subtle"
+          className="p-4"
         >
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
-          >
-            ← Retour
-          </button>
+          {/* Step indicator */}
+          <div className="flex items-center justify-center gap-4 mb-3">
+            <div className="flex items-center gap-2 opacity-40">
+              <div className="w-6 h-6 rounded-full bg-[var(--success)] flex items-center justify-center text-white font-bold text-xs">
+                ✓
+              </div>
+              <span className="text-xs">Choisir</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-white/30" />
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-[var(--primary)] flex items-center justify-center text-white font-bold text-xs">
+                2
+              </div>
+              <span className="text-xs font-medium">Voter</span>
+            </div>
+          </div>
+
+          <div className="text-center text-xs text-[var(--muted-foreground)]">
+            Catégorie {categoryIndex + 1}/4 · {placedCount}/{totalCount} placés
+          </div>
         </motion.div>
 
       {/* Spectrum Area */}
@@ -533,13 +561,40 @@ export function VotingScreen({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-            className="mt-3 text-center py-2 glass rounded-xl"
+              className="mt-3 text-center py-2 glass rounded-xl"
             >
-            <span className="text-[var(--success)] text-sm font-medium">
+              <span className="text-[var(--success)] text-sm font-medium">
                 ✓ Tous placés ! Glissez pour ajuster.
               </span>
             </motion.div>
           )}
+
+          {/* Navigation buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mt-4 flex gap-3"
+          >
+            <button
+              onClick={isFirstCategory ? onBack : onPrevious}
+              className="flex-1 py-3 glass rounded-xl flex items-center justify-center gap-2 text-[var(--muted-foreground)] hover:text-white hover:border-white/30 transition-all"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span className="font-medium">
+                {isFirstCategory ? 'Retour' : 'Précédent'}
+              </span>
+            </button>
+            <button
+              onClick={isLastCategory ? onBack : onNext}
+              className="flex-1 py-3 glass rounded-xl flex items-center justify-center gap-2 text-white bg-[var(--primary)]/20 hover:bg-[var(--primary)]/40 border-[var(--primary)]/50 transition-all"
+            >
+              <span className="font-medium">
+                {isLastCategory ? 'Terminer' : 'Suivant'}
+              </span>
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </motion.div>
         </div>
       </main>
   );

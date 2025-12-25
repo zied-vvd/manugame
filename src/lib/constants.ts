@@ -1,4 +1,4 @@
-import { CategoryIndex, MBTIType } from './types';
+import { CategoryIndex, MBTIType, AwardType, Award, Participant, Vote } from './types';
 
 // Categories in fixed order (French)
 export const CATEGORIES = [
@@ -197,6 +197,71 @@ export const MBTI_CELEBRITIES: Record<MBTIType, Celebrity[]> = {
   ],
 };
 
+// MBTI Group Colors (for Personalities Reveal slide)
+export const MBTI_GROUP_COLORS = {
+  NT: '#9b59b6', // Analysts - Purple
+  NF: '#27ae60', // Diplomats - Green
+  SJ: '#3498db', // Sentinels - Blue
+  SP: '#f39c12', // Explorers - Yellow/Orange
+} as const;
+
+// Get the group code for an MBTI type (e.g., INTJ -> NT)
+export function getMBTIGroup(type: MBTIType): keyof typeof MBTI_GROUP_COLORS {
+  const n_s = type[1]; // N or S
+  const t_f = type[2]; // T or F
+  const j_p = type[3]; // J or P
+
+  if (n_s === 'N' && t_f === 'T') return 'NT'; // Analysts
+  if (n_s === 'N' && t_f === 'F') return 'NF'; // Diplomats
+  if (n_s === 'S' && j_p === 'J') return 'SJ'; // Sentinels
+  return 'SP'; // Explorers
+}
+
+// Get the color for an MBTI type based on its group
+export function getGroupColor(type: MBTIType): string {
+  return MBTI_GROUP_COLORS[getMBTIGroup(type)];
+}
+
+// Get group name in French
+export function getGroupName(group: keyof typeof MBTI_GROUP_COLORS): string {
+  const names = {
+    NT: 'Analystes',
+    NF: 'Diplomates',
+    SJ: 'Sentinelles',
+    SP: 'Explorateurs',
+  };
+  return names[group];
+}
+
+// Get group emoji
+export function getGroupEmoji(group: keyof typeof MBTI_GROUP_COLORS): string {
+  const emojis = {
+    NT: '🟣',
+    NF: '🟢',
+    SJ: '🔵',
+    SP: '🟡',
+  };
+  return emojis[group];
+}
+
+// MBTI type images (from /public/mbtis/)
+export const MBTI_TYPE_IMAGES: Partial<Record<MBTIType, string>> = {
+  ENTJ: '/mbtis/commander.png',
+  ENTP: '/mbtis/innovator.png',
+  INFP: '/mbtis/Médiatrice.png',
+  ENFP: '/mbtis/Inspirateur.png',
+  ISFJ: '/mbtis/Défenseure.png',
+  ESTJ: '/mbtis/Directrice.png',
+  ISFP: '/mbtis/adventurer.png',
+  ESFP: '/mbtis/Amuseuse.png',
+  ESFJ: '/mbtis/esfj.png',
+};
+
+// Get image for MBTI type (returns undefined if not available)
+export function getMBTITypeImage(type: MBTIType): string | undefined {
+  return MBTI_TYPE_IMAGES[type];
+}
+
 // Default avatar colors for participants without photos
 export const AVATAR_COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
@@ -206,4 +271,253 @@ export const AVATAR_COLORS = [
 
 export function getAvatarColor(index: number): string {
   return AVATAR_COLORS[index % AVATAR_COLORS.length];
+}
+
+// MBTI Compatibility - "Golden Pairs" and compatibility scores
+// Based on cognitive function compatibility
+export const MBTI_GOLDEN_PAIRS: Partial<Record<MBTIType, MBTIType[]>> = {
+  INTJ: ['ENFP', 'ENTP'],
+  INTP: ['ENTJ', 'ENFJ'],
+  ENTJ: ['INTP', 'INFP'],
+  ENTP: ['INFJ', 'INTJ'],
+  INFJ: ['ENTP', 'ENFP'],
+  INFP: ['ENTJ', 'ENFJ'],
+  ENFJ: ['INFP', 'INTP'],
+  ENFP: ['INTJ', 'INFJ'],
+  ISTJ: ['ESFP', 'ESTP'],
+  ISFJ: ['ESTP', 'ESFP'],
+  ESTJ: ['ISFP', 'ISTP'],
+  ESFJ: ['ISTP', 'ISFP'],
+  ISTP: ['ESFJ', 'ESTJ'],
+  ISFP: ['ESTJ', 'ESFJ'],
+  ESTP: ['ISFJ', 'ISTJ'],
+  ESFP: ['ISTJ', 'ISFJ'],
+};
+
+// Get opposite MBTI type (all 4 letters flipped)
+export function getOppositeMBTI(type: MBTIType): MBTIType {
+  const opposite = type.split('').map((char, i) => {
+    if (i === 0) return char === 'I' ? 'E' : 'I';
+    if (i === 1) return char === 'N' ? 'S' : 'N';
+    if (i === 2) return char === 'T' ? 'F' : 'T';
+    return char === 'J' ? 'P' : 'J';
+  }).join('');
+  return opposite as MBTIType;
+}
+
+// Check if two types are "golden pair" compatible
+export function areGoldenPair(type1: MBTIType, type2: MBTIType): boolean {
+  return MBTI_GOLDEN_PAIRS[type1]?.includes(type2) || false;
+}
+
+// Calculate compatibility score (0-100)
+export function getCompatibilityScore(type1: MBTIType, type2: MBTIType): number {
+  if (type1 === type2) return 85; // Same type - good understanding
+  if (areGoldenPair(type1, type2)) return 95; // Golden pair
+  if (getOppositeMBTI(type1) === type2) return 60; // Opposites - challenging but growth
+
+  // Count matching dimensions
+  let matches = 0;
+  for (let i = 0; i < 4; i++) {
+    if (type1[i] === type2[i]) matches++;
+  }
+
+  // 3 matches = very similar (80), 2 matches = compatible (70), 1 match = different (65)
+  return 60 + matches * 8;
+}
+
+// Fun compatibility descriptions
+export const COMPATIBILITY_VIBES: Record<string, { emoji: string; label: string; description: string }> = {
+  golden: { emoji: '⭐', label: 'Dream Team', description: 'Une collaboration naturelle' },
+  same: { emoji: '🪞', label: 'Jumeaux', description: 'Même longueur d\'onde' },
+  opposite: { emoji: '🧩', label: 'Complémentaires', description: 'Forces opposées = équilibre' },
+  similar: { emoji: '🤝', label: 'Bonne Entente', description: 'Beaucoup en commun' },
+  different: { emoji: '🌈', label: 'Diversité', description: 'Perspectives différentes' },
+};
+
+export function getCompatibilityVibe(type1: MBTIType, type2: MBTIType): keyof typeof COMPATIBILITY_VIBES {
+  if (areGoldenPair(type1, type2)) return 'golden';
+  if (type1 === type2) return 'same';
+  if (getOppositeMBTI(type1) === type2) return 'opposite';
+
+  let matches = 0;
+  for (let i = 0; i < 4; i++) {
+    if (type1[i] === type2[i]) matches++;
+  }
+  return matches >= 3 ? 'similar' : 'different';
+}
+
+// Award metadata
+export const AWARD_METADATA: Record<AwardType, { emoji: string; title: string; description: string }> = {
+  most_extroverted: { emoji: '🎉', title: 'Le Plus Extraverti', description: 'Vu comme le plus sociable' },
+  most_introverted: { emoji: '🧘', title: 'Le Plus Introverti', description: 'Vu comme le plus réservé' },
+  most_intuitive: { emoji: '🔮', title: 'Le Plus Intuitif', description: 'Tête dans les nuages' },
+  most_observant: { emoji: '👀', title: 'Le Plus Observateur', description: 'Les pieds sur terre' },
+  most_rational: { emoji: '🧠', title: 'Le Plus Rationnel', description: 'Cerveau en acier' },
+  most_feeling: { emoji: '❤️', title: 'Le Plus Sensible', description: 'Cœur sur la main' },
+  most_organized: { emoji: '📋', title: 'Le Plus Organisé', description: 'Roi/Reine de la planification' },
+  most_explorer: { emoji: '🧭', title: "L'Explorateur", description: 'Va où le vent le porte' },
+  best_guesser: { emoji: '🎯', title: 'Le Meilleur Devin', description: 'A le mieux cerné les autres' },
+  most_mysterious: { emoji: '🔮', title: 'Le Plus Mystérieux', description: 'Impossible à cerner' },
+  most_obvious: { emoji: '📖', title: 'Livre Ouvert', description: 'Facile à lire' },
+};
+
+// Map category index + side to award type
+function getExtremeAwardType(catIdx: number, side: 'left' | 'right'): AwardType {
+  const mapping: Record<number, { left: AwardType; right: AwardType }> = {
+    0: { left: 'most_introverted', right: 'most_extroverted' },
+    1: { left: 'most_intuitive', right: 'most_observant' },
+    2: { left: 'most_rational', right: 'most_feeling' },
+    3: { left: 'most_organized', right: 'most_explorer' },
+  };
+  return mapping[catIdx][side];
+}
+
+interface AggregatedData {
+  [participantId: string]: {
+    [category: number]: { mean: number; count: number };
+  };
+}
+
+// Calculate voter accuracy for Best Guesser award
+function calculateVoterAccuracy(
+  votes: Vote[],
+  participants: Participant[]
+): { voterId: string; accuracy: number }[] {
+  const voterResults: Record<string, { correct: number; total: number }> = {};
+
+  votes.forEach(vote => {
+    const target = participants.find(p => p.id === vote.target_id);
+    if (!target) return;
+
+    if (!voterResults[vote.voter_id]) {
+      voterResults[vote.voter_id] = { correct: 0, total: 0 };
+    }
+
+    const predictedSide = vote.position >= 50 ? 'right' : 'left';
+    const actualSide = getActualSide(target.real_mbti, vote.category);
+
+    voterResults[vote.voter_id].total++;
+    if (predictedSide === actualSide) {
+      voterResults[vote.voter_id].correct++;
+    }
+  });
+
+  return Object.entries(voterResults)
+    .map(([voterId, { correct, total }]) => ({
+      voterId,
+      accuracy: total > 0 ? correct / total : 0,
+    }))
+    .sort((a, b) => b.accuracy - a.accuracy);
+}
+
+// Calculate perception gaps for Mysterious/Obvious awards
+function calculatePerceptionGaps(
+  participants: Participant[],
+  aggregates: AggregatedData
+): { participant: Participant; wrongTraits: number }[] {
+  return participants
+    .map(p => {
+      let wrongTraits = 0;
+
+      for (let catIdx = 0; catIdx < 4; catIdx++) {
+        const agg = aggregates[p.id]?.[catIdx];
+        if (!agg) continue;
+
+        const predictedSide = agg.mean >= 50 ? 'right' : 'left';
+        const actualSide = getActualSide(p.real_mbti, catIdx as CategoryIndex);
+
+        if (predictedSide !== actualSide) {
+          wrongTraits++;
+        }
+      }
+
+      return { participant: p, wrongTraits };
+    })
+    .sort((a, b) => a.wrongTraits - b.wrongTraits);
+}
+
+// Calculate all awards
+export function calculateAwards(
+  votes: Vote[],
+  participants: Participant[],
+  aggregates: AggregatedData
+): Award[] {
+  const awards: Award[] = [];
+
+  // Helper to get random participant as fallback
+  const getRandomParticipant = () => participants[Math.floor(Math.random() * participants.length)];
+
+  if (participants.length === 0) return awards;
+
+  // 1. Personality Extremes (8 awards)
+  for (let catIdx = 0; catIdx < 4; catIdx++) {
+    let highest = { participant: null as Participant | null, mean: -1 };
+    let lowest = { participant: null as Participant | null, mean: 101 };
+
+    participants.forEach(p => {
+      const agg = aggregates[p.id]?.[catIdx];
+      if (agg) {
+        if (agg.mean > highest.mean) {
+          highest = { participant: p, mean: agg.mean };
+        }
+        if (agg.mean < lowest.mean) {
+          lowest = { participant: p, mean: agg.mean };
+        }
+      }
+    });
+
+    // Left side extreme (low mean) - fallback to random if no data
+    const leftType = getExtremeAwardType(catIdx, 'left');
+    awards.push({
+      type: leftType,
+      ...AWARD_METADATA[leftType],
+      winner: lowest.participant || getRandomParticipant(),
+      value: lowest.participant ? Math.round(100 - lowest.mean) : 50,
+    });
+
+    // Right side extreme (high mean) - fallback to random if no data
+    const rightType = getExtremeAwardType(catIdx, 'right');
+    awards.push({
+      type: rightType,
+      ...AWARD_METADATA[rightType],
+      winner: highest.participant || getRandomParticipant(),
+      value: highest.participant ? Math.round(highest.mean) : 50,
+    });
+  }
+
+  // 2. Best Guesser
+  const voterScores = calculateVoterAccuracy(votes, participants);
+  const bestGuesser = voterScores.length > 0 ? voterScores[0] : null;
+  const bestGuesserWinner = bestGuesser
+    ? participants.find(p => p.id === bestGuesser.voterId)
+    : null;
+
+  awards.push({
+    type: 'best_guesser',
+    ...AWARD_METADATA.best_guesser,
+    winner: bestGuesserWinner || getRandomParticipant(),
+    value: bestGuesser ? Math.round(bestGuesser.accuracy * 100) : 50,
+  });
+
+  // 3. Most Mysterious & Most Obvious
+  const perceptionGaps = calculatePerceptionGaps(participants, aggregates);
+  const mostObvious = perceptionGaps.length > 0 ? perceptionGaps[0] : null;
+  const mostMysterious = perceptionGaps.length > 0 ? perceptionGaps[perceptionGaps.length - 1] : null;
+
+  awards.push({
+    type: 'most_obvious',
+    ...AWARD_METADATA.most_obvious,
+    winner: mostObvious?.participant || getRandomParticipant(),
+    value: mostObvious ? 4 - mostObvious.wrongTraits : 2,
+  });
+
+  awards.push({
+    type: 'most_mysterious',
+    ...AWARD_METADATA.most_mysterious,
+    winner: mostMysterious?.participant || getRandomParticipant(),
+    value: mostMysterious?.wrongTraits ?? 2,
+  });
+
+  return awards;
 }
