@@ -28,6 +28,7 @@ export const PARTY_MEMBERS: PartyMember[] = [
   { name: 'JY', mbti: 'ENTP', image: 'jy.png' },
   { name: 'Zach', mbti: 'ENTP', image: 'zach.png' },
   { name: 'Marie-Helene', mbti: 'ISFJ', image: 'marie.png' },
+  { name: 'Virginie', mbti: 'ISFJ', image: 'virginie.png' },
 ];
 
 /**

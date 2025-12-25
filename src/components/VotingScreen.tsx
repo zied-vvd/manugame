@@ -225,7 +225,7 @@ function PlacedHeadOnSpectrum({
   index,
   containerWidth,
   containerHeight,
-  onDrag,
+  spectrumRef,
   onDragEnd,
 }: {
   participant: Participant;
@@ -234,29 +234,48 @@ function PlacedHeadOnSpectrum({
   index: number;
   containerWidth: number;
   containerHeight: number;
-  onDrag: (id: string, x: number, y: number) => void;
-  onDragEnd: () => void;
+  spectrumRef: React.RefObject<HTMLDivElement | null>;
+  onDragEnd: (id: string, x: number, y: number) => void;
 }) {
   const [isDragging, setIsDragging] = useState(false);
+  const lastPositionRef = useRef({ x: position, y: yPercent });
   const bgColor = getAvatarColor(index);
-  const headSize = 56; // Smaller heads
+  const headSize = 56;
+
+  useEffect(() => {
+    lastPositionRef.current = { x: position, y: yPercent };
+  }, [position, yPercent]);
 
   const handleDragStart = () => {
     setIsDragging(true);
   };
 
-  const handleDrag = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const parentRect = (event.target as HTMLElement)?.closest('.spectrum-area')?.getBoundingClientRect();
-    if (parentRect) {
+  const handleDrag = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (spectrumRef.current) {
+      const parentRect = spectrumRef.current.getBoundingClientRect();
       const x = ((info.point.x - parentRect.left) / parentRect.width) * 100;
       const y = (((info.point.y - (parentRect.top + parentRect.height / 2)) / (parentRect.height / 2))) * 100;
-      onDrag(participant.id, Math.max(2, Math.min(98, x)), Math.max(-95, Math.min(95, y)));
+      lastPositionRef.current = {
+        x: Math.max(2, Math.min(98, x)),
+        y: Math.max(-95, Math.min(95, y))
+      };
     }
   };
 
-  const handleDragEnd = () => {
+  const handleDragEndEvent = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     setIsDragging(false);
-    onDragEnd();
+    if (spectrumRef.current) {
+      const parentRect = spectrumRef.current.getBoundingClientRect();
+      const x = ((info.point.x - parentRect.left) / parentRect.width) * 100;
+      const y = (((info.point.y - (parentRect.top + parentRect.height / 2)) / (parentRect.height / 2))) * 100;
+      onDragEnd(
+        participant.id,
+        Math.max(2, Math.min(98, x)),
+        Math.max(-95, Math.min(95, y))
+      );
+    } else {
+      onDragEnd(participant.id, lastPositionRef.current.x, lastPositionRef.current.y);
+    }
   };
 
   const xPos = (position / 100) * containerWidth - headSize / 2;
@@ -275,7 +294,7 @@ function PlacedHeadOnSpectrum({
       }}
       onDragStart={handleDragStart}
       onDrag={handleDrag}
-      onDragEnd={handleDragEnd}
+      onDragEnd={handleDragEndEvent}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: isDragging ? 1.2 : 1, opacity: 1 }}
       style={{ 
@@ -405,20 +424,16 @@ export function VotingScreen({
     }, 50);
   }, [onVote, triggerSimulation]);
 
-  // Handle drag within spectrum
-  const handleDragWithinSpectrum = useCallback((id: string, x: number, y: number) => {
-    const newHeads = localHeads.map(h => h.id === id ? { ...h, x, y } : h);
-    setLocalHeads(newHeads);
-    updateHeads(newHeads);
-  }, [localHeads, updateHeads]);
-
-  const handleDragEndWithinSpectrum = useCallback(() => {
-    // Save all current positions
-    localHeads.forEach(h => {
-      onVote(h.id, h.x);
+  // Handle drag end within spectrum - receives final position directly
+  const handleDragEndWithinSpectrum = useCallback((id: string, x: number, y: number) => {
+    onVote(id, x);
+    setLocalHeads(prev => {
+      const newHeads = prev.map(h => h.id === id ? { ...h, x, y, vy: 0 } : h);
+      updateHeads(newHeads);
+      return newHeads;
     });
-    triggerSimulation();
-  }, [localHeads, onVote, triggerSimulation]);
+    setTimeout(() => triggerSimulation(), 50);
+  }, [onVote, updateHeads, triggerSimulation]);
 
   const unplacedTargets = targets.filter(t => !votes.find(v => v.target_id === t.id));
   const placedTargets = targets.filter(t => votes.find(v => v.target_id === t.id));
@@ -514,7 +529,7 @@ export function VotingScreen({
                   index={idx}
                   containerWidth={containerSize.width}
                   containerHeight={containerSize.height}
-                  onDrag={handleDragWithinSpectrum}
+                  spectrumRef={spectrumRef}
                   onDragEnd={handleDragEndWithinSpectrum}
                 />
               );
