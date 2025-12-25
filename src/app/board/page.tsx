@@ -435,6 +435,21 @@ function BoardContent() {
     return () => clearInterval(interval);
   }, [session, rotateView]);
 
+  // Auto-rotate spotlight person every 2 minutes when in spotlight mode
+  useEffect(() => {
+    if (viewMode !== 'spotlight' || participants.length === 0) return;
+
+    const interval = setInterval(() => {
+      setSpotlightPerson((current) => {
+        const idx = current ? participants.findIndex(p => p.id === current.id) : -1;
+        const nextIdx = (idx + 1) % participants.length;
+        return participants[nextIdx];
+      });
+    }, 120000); // 2 minutes
+
+    return () => clearInterval(interval);
+  }, [viewMode, participants]);
+
   // Random peeker effect - a head peeks in from random edges every 3 minutes
   useEffect(() => {
     if (!session || participants.length === 0) return;
@@ -807,18 +822,25 @@ function SpectrumView({
                 style={{ width: headSize, height: headSize }}
               >
                 <div className="relative group">
-                  <div
-                    className="w-20 h-20 rounded-full bg-cover bg-center shadow-2xl border-4 border-white/20 transition-transform group-hover:scale-110"
-                    style={{
-                      backgroundImage: p.avatar_url ? `url(${p.avatar_url})` : undefined,
-                      backgroundColor: p.avatar_url ? undefined : getAvatarColor(pIndex),
-                    }}
-                  >
-                    {!p.avatar_url && (
-                      <div className="w-full h-full flex items-center justify-center text-white font-bold text-3xl">
-                        {p.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  {/* Black outer border */}
+                  <div className="w-24 h-24 rounded-full p-1.5 flex items-center justify-center bg-black transition-transform group-hover:scale-110">
+                    {/* White middle border */}
+                    <div className="w-full h-full rounded-full p-1 bg-white flex items-center justify-center">
+                      {/* Avatar inner */}
+                      <div
+                        className="w-full h-full rounded-full bg-cover bg-center shadow-2xl"
+                        style={{
+                          backgroundImage: p.avatar_url ? `url(${p.avatar_url})` : undefined,
+                          backgroundColor: p.avatar_url ? undefined : getAvatarColor(pIndex),
+                        }}
+                      >
+                        {!p.avatar_url && (
+                          <div className="w-full h-full flex items-center justify-center text-white font-bold text-3xl">
+                            {p.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                   <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-32 text-center">
                     <p className="text-lg font-bold text-white drop-shadow-md truncate">

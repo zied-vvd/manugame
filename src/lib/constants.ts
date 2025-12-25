@@ -116,84 +116,84 @@ export interface Celebrity {
 
 export const MBTI_CELEBRITIES: Record<MBTIType, Celebrity[]> = {
   INTJ: [
-    { name: 'Denis Villeneuve', description: 'Strategic, future-oriented storyteller with controlled aesthetics', imageUrl: '/celebs/denis.jpg' },
-    { name: 'Lucien Bouchard', description: 'Long-range strategist in sovereignty-era politics', imageUrl: '/celebs/Lucien_Bouchard02_crop.jpg' },
-    { name: 'Margaret Atwood', description: 'Intellectual, foresight-driven, socially critical', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Margaret_Atwood_2015.jpg/440px-Margaret_Atwood_2015.jpg' }
+    { name: 'Denis Villeneuve', description: 'Conteur stratégique et visionnaire avec une esthétique contrôlée', imageUrl: '/celebs/denis.jpg' },
+    { name: 'Lucien Bouchard', description: 'Stratégiste à long terme dans la politique', imageUrl: '/celebs/Lucien_Bouchard02_crop.jpg' },
+    { name: 'Margaret Atwood', description: 'Intellectuelle, prévoyante et critique socialement', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Margaret_Atwood_2015.jpg/440px-Margaret_Atwood_2015.jpg' }
   ],
   INTP: [
-    { name: 'Albert Einstein', description: 'Pure conceptual exploration', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Einstein_1921_by_F_Schmutzer_-_restoration.jpg/440px-Einstein_1921_by_F_Schmutzer_-_restoration.jpg' },
-    { name: 'Jean-Marc Vallée', description: 'Meticulous, emotionally intelligent filmmaker', imageUrl: '/celebs/Jean-Marc_Vallée,_Genie_Awards_2012.jpg' },
-    { name: 'Hubert Reeves', description: 'Abstract, cerebral exploration of the cosmos', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/80/Hubert_Reeves%2C_2015_%28cropped%29.jpg' }
+    { name: 'Albert Einstein', description: 'Exploration conceptuelle pure', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Einstein_1921_by_F_Schmutzer_-_restoration.jpg/440px-Einstein_1921_by_F_Schmutzer_-_restoration.jpg' },
+    { name: 'Jean-Marc Vallée', description: 'Cinéaste méticuleux et intelligent émotionnellement', imageUrl: '/celebs/Jean-Marc_Vallée,_Genie_Awards_2012.jpg' },
+    { name: 'Hubert Reeves', description: 'Exploration abstraite et cérébrale du cosmos', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/80/Hubert_Reeves%2C_2015_%28cropped%29.jpg' }
   ],
   ENTJ: [
-    { name: 'Steve Jobs', description: 'Vision + ruthless execution', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Steve_Jobs_Headshot_2010-CROP_%28cropped_2%29.jpg/440px-Steve_Jobs_Headshot_2010-CROP_%28cropped_2%29.jpg' },
-    { name: 'Brian Mulroney', description: 'Scaled vision into national policy', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/40/Mulroney_%28cropped%29%282%29.jpg' },
-    { name: 'Tywin Lannister', description: 'Authority, structure, legacy', imageUrl: '/celebs/Tywin_Lannister_4x08.webp' }
+    { name: 'Steve Jobs', description: 'Vision + exécution impitoyable', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Steve_Jobs_Headshot_2010-CROP_%28cropped_2%29.jpg/440px-Steve_Jobs_Headshot_2010-CROP_%28cropped_2%29.jpg' },
+    { name: 'Brian Mulroney', description: 'Vision mise à l\'échelle en politique nationale', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/40/Mulroney_%28cropped%29%282%29.jpg' },
+    { name: 'Tywin Lannister', description: 'Autorité, structure et héritage', imageUrl: '/celebs/Tywin_Lannister_4x08.webp' }
   ],
   ENTP: [
-    { name: 'Guy Laliberté', description: 'Improvisational, risk-taking creator-entrepreneur', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/83/Guy_Laliberte_WPT.jpg' },
-    { name: 'Jay Du Temple', description: 'Rapid-fire wit, social creativity', imageUrl: '/celebs/jay-du-temple-les-enfants-de-la-tele.webp' },
-    { name: 'Robin Williams', description: 'Improvisational brilliance', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Robin_Williams_2011a_%282%29.jpg/440px-Robin_Williams_2011a_%282%29.jpg' }
+    { name: 'Guy Laliberté', description: 'Créateur-entrepreneur improvisé et aventurier', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/83/Guy_Laliberte_WPT.jpg' },
+    { name: 'Jay Du Temple', description: 'Esprit vif et créativité sociale', imageUrl: '/celebs/jay-du-temple-les-enfants-de-la-tele.webp' },
+    { name: 'Robin Williams', description: 'Génie de l\'improvisation', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Robin_Williams_2011a_%282%29.jpg/440px-Robin_Williams_2011a_%282%29.jpg' }
   ],
   INFJ: [
-    { name: 'Robert Lepage', description: 'Visionary integrator across mediums with thematic depth', imageUrl: '/celebs/Robert_Lepage.jpg' },
-    { name: 'Leonard Cohen', description: 'Quiet duty, values-first, poetic depth', imageUrl: '/celebs/Leonard_Cohen,_1988_01.jpg' },
-    { name: 'Martin Luther King Jr.', description: 'Moral vision + long arc change', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Martin_Luther_King%2C_Jr..jpg/440px-Martin_Luther_King%2C_Jr..jpg' }
+    { name: 'Robert Lepage', description: 'Visionnaire intégrant plusieurs domaines avec profondeur', imageUrl: '/celebs/Robert_Lepage.jpg' },
+    { name: 'Leonard Cohen', description: 'Devoir discret, valeurs d\'abord, profondeur poétique', imageUrl: '/celebs/Leonard_Cohen,_1988_01.jpg' },
+    { name: 'Martin Luther King Jr.', description: 'Vision morale et changement à long terme', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Martin_Luther_King%2C_Jr..jpg/440px-Martin_Luther_King%2C_Jr..jpg' }
   ],
   INFP: [
-    { name: 'Xavier Dolan', description: 'Emotive, values-driven auteur focused on identity', imageUrl: '/celebs/Xavier_Dolan_Cannes_2016.jpg' },
-    { name: 'Michel Tremblay', description: 'Language, identity, and humanism in literature', imageUrl: '/celebs/micheltremblay.jpeg' },
-    { name: 'Cœur de pirate', description: 'Introspective, expressive art', imageUrl: '/celebs/piratecoeur.jpg' }
+    { name: 'Xavier Dolan', description: 'Auteur émotif et guidé par les valeurs, axé sur l\'identité', imageUrl: '/celebs/Xavier_Dolan_Cannes_2016.jpg' },
+    { name: 'Michel Tremblay', description: 'Langage, identité et humanisme en littérature', imageUrl: '/celebs/micheltremblay.jpeg' },
+    { name: 'Cœur de pirate', description: 'Art introspectif et expressif', imageUrl: '/celebs/piratecoeur.jpg' }
   ],
   ENFJ: [
-    { name: 'Justin Trudeau', description: 'Relational leadership', imageUrl: '/celebs/trudeau.avif' },
-    { name: 'Oprah Winfrey', description: 'Emotional leadership at scale', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Oprah_in_2014.jpg/440px-Oprah_in_2014.jpg' },
-    { name: 'Véronique Cloutier', description: 'Guidance through connection and charisma', imageUrl: '/celebs/veronique-cloutier-bio-1.jpg' }
+    { name: 'Justin Trudeau', description: 'Leadership relationnel', imageUrl: '/celebs/trudeau.avif' },
+    { name: 'Oprah Winfrey', description: 'Leadership émotionnel à grande échelle', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Oprah_in_2014.jpg/440px-Oprah_in_2014.jpg' },
+    { name: 'Véronique Cloutier', description: 'Guidance par la connexion et le charisme', imageUrl: '/celebs/veronique-cloutier-bio-1.jpg' }
   ],
   ENFP: [
-    { name: 'Charlotte Cardin', description: 'Expressive creativity', imageUrl: '/celebs/charlotte.webp' },
-    { name: 'Will Smith', description: 'Big emotional range + optimism', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/TechCrunch_Disrupt_2019_%2848834434641%29_%28cropped%29.jpg/440px-TechCrunch_Disrupt_2019_%2848834434641%29_%28cropped%29.jpg' },
-    { name: 'Mitsou', description: 'Playful idealism and energy', imageUrl: '/celebs/mitsou.jpeg' }
+    { name: 'Charlotte Cardin', description: 'Créativité expressive', imageUrl: '/celebs/charlotte.webp' },
+    { name: 'Will Smith', description: 'Large gamme émotionnelle + optimisme', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/TechCrunch_Disrupt_2019_%2848834434641%29_%28cropped%29.jpg/440px-TechCrunch_Disrupt_2019_%2848834434641%29_%28cropped%29.jpg' },
+    { name: 'Mitsou', description: 'Idéalisme ludique et énergie', imageUrl: '/celebs/mitsou.jpeg' }
   ],
   ISTJ: [
-    { name: 'Georges St-Pierre', description: 'Disciplined, methodical competitor with structured preparation', imageUrl: '/celebs/gsp.jpg' },
-    { name: 'Jean Charest', description: 'Institutional steadiness', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/13/Agriculture_Secretary_Perdue_Visit_to_Canada_20170605-OSEC-RV-0003_%2834337316314%29_%28cropped%29.jpg' },
-    { name: 'Eddard Stark', description: 'Law, honor, structure', imageUrl: '/celebs/Eddard_Stark.webp' }
+    { name: 'Georges St-Pierre', description: 'Compétiteur discipliné et méthodique avec préparation structurée', imageUrl: '/celebs/gsp.jpg' },
+    { name: 'Jean Charest', description: 'Stabilité institutionnelle', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/13/Agriculture_Secretary_Perdue_Visit_to_Canada_20170605-OSEC-RV-0003_%2834337316314%29_%28cropped%29.jpg' },
+    { name: 'Eddard Stark', description: 'Loi, honneur et structure', imageUrl: '/celebs/Eddard_Stark.webp' }
   ],
   ISFJ: [
-    { name: 'Ginette Reno', description: 'Duty, care, emotional depth', imageUrl: 'https://canadianmusichalloffame.ca/wp-content/uploads/2025/01/CMHF_Ginette-Reno.png' },
-    { name: 'Queen Elizabeth II', description: 'Lifelong service', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Queen_Elizabeth_II_in_March_2015.jpg/440px-Queen_Elizabeth_II_in_March_2015.jpg' },
-    { name: 'Samwise Gamgee', description: 'Loyalty incarnate', imageUrl: '/celebs/samwise.jpeg' }
+    { name: 'Ginette Reno', description: 'Devoir, soin et profondeur émotionnelle', imageUrl: 'https://canadianmusichalloffame.ca/wp-content/uploads/2025/01/CMHF_Ginette-Reno.png' },
+    { name: 'Queen Elizabeth II', description: 'Service à vie', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Queen_Elizabeth_II_in_March_2015.jpg/440px-Queen_Elizabeth_II_in_March_2015.jpg' },
+    { name: 'Samwise Gamgee', description: 'Loyauté incarnée', imageUrl: '/celebs/samwise.jpeg' }
   ],
   ESTJ: [
-    { name: 'François Legault', description: 'Administrative, pragmatic executive style in governance', imageUrl: '/celebs/legault.jpg' },
-    { name: 'Paul Desmarais', description: 'Organizational power and standards', imageUrl: '/celebs/paul.png' },
-    { name: 'Judge Judy', description: 'Rules + authority', imageUrl: '/celebs/judge.JPG' }
+    { name: 'François Legault', description: 'Style exécutif administratif et pragmatique en gouvernance', imageUrl: '/celebs/legault.jpg' },
+    { name: 'Paul Desmarais', description: 'Pouvoir organisationnel et standards', imageUrl: '/celebs/paul.png' },
+    { name: 'Judge Judy', description: 'Règles + autorité', imageUrl: '/celebs/judge.JPG' }
   ],
   ESFJ: [
-    { name: 'Celine Dion', description: 'Warm, service-oriented performer with strong audience attunement', imageUrl: '/celebs/celine.jpg' },
-    { name: 'Pauline Marois', description: 'Consensus-building, community-oriented leadership profile', imageUrl: '/celebs/pauline.jpeg' },
-    { name: 'Marie-Mai', description: 'Community focus and engagement', imageUrl: '/celebs/marie.jpeg' }
+    { name: 'Celine Dion', description: 'Interprète chaleureuse et orientée service avec écoute du public', imageUrl: '/celebs/celine.jpg' },
+    { name: 'Pauline Marois', description: 'Profil de leadership consensuel et communautaire', imageUrl: '/celebs/pauline.jpeg' },
+    { name: 'Marie-Mai', description: 'Focus communautaire et engagement', imageUrl: '/celebs/marie.jpeg' }
   ],
   ISTP: [
-    { name: 'Jacques Villeneuve', description: 'Tactical pragmatism, calm under pressure', imageUrl: '/celebs/jacques.jpg' },
-    { name: 'Clint Eastwood', description: 'Stoic competence', imageUrl: '/celebs/clint.webp' },
-    { name: 'Geralt of Rivia', description: 'Tactical pragmatism', imageUrl: '/celebs/geralt.webp' }
+    { name: 'Jacques Villeneuve', description: 'Pragmatisme tactique et calme sous pression', imageUrl: '/celebs/jacques.jpg' },
+    { name: 'Clint Eastwood', description: 'Compétence stoïque', imageUrl: '/celebs/clint.webp' },
+    { name: 'Geralt of Rivia', description: 'Pragmatisme tactique', imageUrl: '/celebs/geralt.webp' }
   ],
   ISFP: [
-    { name: 'Patrick Watson', description: 'Aesthetic, free-spirited, ethereal creativity', imageUrl: 'https://images.radio-canada.ca/v1/ici-tele/16x9/tout-le-monde-en-parle-patrick-watson.jpg' },
-    { name: 'Ariane Moffatt', description: 'Aesthetic, free-spirited, diverse soundscapes', imageUrl: '/celebs/ariane.jpeg' },
-    { name: 'Frida Kahlo', description: 'Emotion through creation', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Frida_Kahlo%2C_by_Guillermo_Kahlo.jpg/440px-Frida_Kahlo%2C_by_Guillermo_Kahlo.jpg' }
+    { name: 'Patrick Watson', description: 'Esthétique, liberté d\'esprit et créativité éthérée', imageUrl: 'https://images.radio-canada.ca/v1/ici-tele/16x9/tout-le-monde-en-parle-patrick-watson.jpg' },
+    { name: 'Ariane Moffatt', description: 'Esthétique, liberté d\'esprit et sonorités variées', imageUrl: '/celebs/ariane.jpeg' },
+    { name: 'Frida Kahlo', description: 'Émotion à travers la création', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Frida_Kahlo%2C_by_Guillermo_Kahlo.jpg/440px-Frida_Kahlo%2C_by_Guillermo_Kahlo.jpg' }
   ],
   ESTP: [
-    { name: 'Laurent Duvernay-Tardif', description: 'Immediate impact, bold performance, risk-oriented', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Laurent_Duvernay-Tardif_2017.JPG' },
-    { name: 'Madonna', description: 'Immediate impact, bold performance', imageUrl: '/celebs/madona.jpg' },
-    { name: 'Han Solo', description: 'Improvisational action', imageUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/be/Han_Solo_depicted_in_promotional_image_for_Star_Wars_%281977%29.jpg/440px-Han_Solo_depicted_in_promotional_image_for_Star_Wars_%281977%29.jpg' }
+    { name: 'Laurent Duvernay-Tardif', description: 'Impact immédiat, performance audacieuse et orientée risque', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Laurent_Duvernay-Tardif_2017.JPG' },
+    { name: 'Madonna', description: 'Impact immédiat et performance audacieuse', imageUrl: '/celebs/madona.jpg' },
+    { name: 'Han Solo', description: 'Action improvisée', imageUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/be/Han_Solo_depicted_in_promotional_image_for_Star_Wars_%281977%29.jpg/440px-Han_Solo_depicted_in_promotional_image_for_Star_Wars_%281977%29.jpg' }
   ],
   ESFP: [
-    { name: 'Sugar Sammy', description: 'Present-focused, expressive, chaotic charm', imageUrl: '/celebs/sugar.jpeg' },
-    { name: 'Beyoncé', description: 'Performance mastery', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Beyonc%C3%A9_at_The_Lion_King_European_Premiere_2019.png/440px-Beyonc%C3%A9_at_The_Lion_King_European_Premiere_2019.png' },
-    { name: 'Jack Sparrow', description: 'Chaotic charm', imageUrl: '/celebs/jacksparrow.webp' }
+    { name: 'Sugar Sammy', description: 'Présent-focalisé, expressif avec charme chaotique', imageUrl: '/celebs/sugar.jpeg' },
+    { name: 'Beyoncé', description: 'Maîtrise de la performance', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Beyonc%C3%A9_at_The_Lion_King_European_Premiere_2019.png/440px-Beyonc%C3%A9_at_The_Lion_King_European_Premiere_2019.png' },
+    { name: 'Jack Sparrow', description: 'Charme chaotique', imageUrl: '/celebs/jacksparrow.webp' }
   ],
 };
 
