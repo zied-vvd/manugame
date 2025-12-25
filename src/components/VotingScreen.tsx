@@ -174,36 +174,35 @@ function DraggableHead({
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const bgColor = getAvatarColor(index);
-  const spectrumRectRef = useRef<DOMRect | null>(null);
 
   const handleDragStart = () => {
     setIsDragging(true);
-    // Cache the rect at drag start, not during move
-    if (spectrumRef.current) {
-      spectrumRectRef.current = spectrumRef.current.getBoundingClientRect();
-    }
   };
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     setIsDragging(false);
 
-    // Use cached rect instead of calling getBoundingClientRect() again
-    const rect = spectrumRectRef.current;
-    if (rect) {
+    if (spectrumRef.current) {
+      const rect = spectrumRef.current.getBoundingClientRect();
       const point = info.point;
 
+      // Check if drag ended within spectrum bounds
       if (
         point.x >= rect.left &&
         point.x <= rect.right &&
         point.y >= rect.top &&
         point.y <= rect.bottom
       ) {
+        // Calculate position within spectrum (0-100% for X, -100 to +100 for Y)
         const x = ((point.x - rect.left) / rect.width) * 100;
         const y = (((point.y - (rect.top + rect.height / 2)) / (rect.height / 2))) * 100;
-        onDragToSpectrum(participant.id, Math.max(2, Math.min(98, x)), Math.max(-95, Math.min(95, y)));
+        onDragToSpectrum(
+          participant.id,
+          Math.max(2, Math.min(98, x)),
+          Math.max(-95, Math.min(95, y))
+        );
       }
     }
-    spectrumRectRef.current = null;
   };
 
   return (
@@ -259,6 +258,7 @@ function PlacedHeadOnSpectrum({
   containerHeight,
   spectrumRef,
   onDragEnd,
+  onDragStateChange,
 }: {
   participant: Participant;
   position: number;
@@ -268,66 +268,83 @@ function PlacedHeadOnSpectrum({
   containerHeight: number;
   spectrumRef: React.RefObject<HTMLDivElement | null>;
   onDragEnd: (id: string, x: number, y: number) => void;
+  onDragStateChange?: (isDragging: boolean) => void;
 }) {
   const [isDragging, setIsDragging] = useState(false);
-  const lastPositionRef = useRef({ x: position, y: yPercent });
-  const spectrumRectRef = useRef<DOMRect | null>(null);
+  const startPositionRef = useRef({ x: position, y: yPercent });
   const bgColor = getAvatarColor(index);
   const headSize = 56;
+  const scaleFactor = isDragging ? 1.2 : 1; // Account for grow effect
 
+  // Update start position when position changes (but not during drag)
   useEffect(() => {
-    lastPositionRef.current = { x: position, y: yPercent };
-  }, [position, yPercent]);
+    if (!isDragging) {
+      startPositionRef.current = { x: position, y: yPercent };
+    }
+  }, [position, yPercent, isDragging]);
 
   const handleDragStart = () => {
     setIsDragging(true);
-    // Cache rect at drag start
-    if (spectrumRef.current) {
-      spectrumRectRef.current = spectrumRef.current.getBoundingClientRect();
-    }
+    onDragStateChange?.(true);
   };
 
   const handleDrag = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    // Use cached rect if available, otherwise fall back
-    const parentRect = spectrumRectRef.current || spectrumRef.current?.getBoundingClientRect();
-    if (parentRect) {
-      const x = ((info.point.x - parentRect.left) / parentRect.width) * 100;
-      const y = (((info.point.y - (parentRect.top + parentRect.height / 2)) / (parentRect.height / 2))) * 100;
-      lastPositionRef.current = {
-        x: Math.max(2, Math.min(98, x)),
-        y: Math.max(-95, Math.min(95, y))
-      };
-    }
+    // Use info.offset (accumulated drag offset) instead of info.point (mouse position)
+    // info.offset is relative to drag start, so it's immune to scroll/viewport changes
+    const offsetX = info.offset.x;
+    const offsetY = info.offset.y;
+
+    // Convert pixel offsets to percentage change in spectrum
+    const xPercentChange = (offsetX / containerWidth) * 100;
+    const yPercentChange = (offsetY / (containerHeight / 2)) * 100;
+
+    // Calculate new position as: starting position + drag offset
+    const newX = startPositionRef.current.x + xPercentChange;
+    const newY = startPositionRef.current.y + yPercentChange;
+
+    // Clamp to bounds (matching the constraints)
+    const clampedX = Math.max(2, Math.min(98, newX));
+    const clampedY = Math.max(-95, Math.min(95, newY));
+
+    // For visual feedback during drag, we could update a visual indicator
+    // But we don't update the actual state until drag ends
   };
 
   const handleDragEndEvent = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     setIsDragging(false);
-    // Use cached rect
-    const parentRect = spectrumRectRef.current || spectrumRef.current?.getBoundingClientRect();
-    if (parentRect) {
-      const x = ((info.point.x - parentRect.left) / parentRect.width) * 100;
-      const y = (((info.point.y - (parentRect.top + parentRect.height / 2)) / (parentRect.height / 2))) * 100;
-      onDragEnd(
-        participant.id,
-        Math.max(2, Math.min(98, x)),
-        Math.max(-95, Math.min(95, y))
-      );
-    } else {
-      onDragEnd(participant.id, lastPositionRef.current.x, lastPositionRef.current.y);
-    }
-    spectrumRectRef.current = null;
+    onDragStateChange?.(false);
+
+    // Use info.offset to calculate final position
+    const offsetX = info.offset.x;
+    const offsetY = info.offset.y;
+
+    // Convert pixel offsets to percentage change
+    const xPercentChange = (offsetX / containerWidth) * 100;
+    const yPercentChange = (offsetY / (containerHeight / 2)) * 100;
+
+    // Calculate final position
+    const finalX = startPositionRef.current.x + xPercentChange;
+    const finalY = startPositionRef.current.y + yPercentChange;
+
+    // Clamp to bounds
+    const clampedX = Math.max(2, Math.min(98, finalX));
+    const clampedY = Math.max(-95, Math.min(95, finalY));
+
+    onDragEnd(participant.id, clampedX, clampedY);
   };
 
-  const xPos = (position / 100) * containerWidth - headSize / 2;
-  const yPos = (containerHeight / 2) + (yPercent * containerHeight / 200) - headSize / 2;
+  const xPos = (position / 100) * containerWidth - (headSize * scaleFactor) / 2;
+  const yPos = (containerHeight / 2) + (yPercent * containerHeight / 200) - (headSize * scaleFactor) / 2;
 
-  // Memoize drag constraints - only recalculate when positions change
+  // Simpler constraints: just allow dragging to container edges
+  // Account for the scaled size when calculating constraints
+  const scaledHeadSize = headSize * scaleFactor;
   const dragConstraints = useMemo(() => ({
-    left: -xPos,
-    right: containerWidth - xPos - headSize,
-    top: -yPos,
-    bottom: containerHeight - yPos - headSize
-  }), [xPos, yPos, containerWidth, containerHeight]);
+    left: -(xPos),
+    right: containerWidth - xPos - scaledHeadSize,
+    top: -(yPos),
+    bottom: containerHeight - yPos - scaledHeadSize,
+  }), [xPos, yPos, containerWidth, containerHeight, scaledHeadSize]);
 
   return (
     <motion.div
@@ -396,6 +413,7 @@ export function VotingScreen({
 }: VotingScreenProps) {
   const spectrumRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [isAnyDragging, setIsAnyDragging] = useState(false); // Pause physics during any drag
   const headSize = 56;
 
   // Create initial placed heads from votes
@@ -464,7 +482,10 @@ export function VotingScreen({
   );
 
   // Sync localHeads to physics simulation (preserve Y positions from physics)
+  // Skip during drag to prevent physics from interfering with user input
   useEffect(() => {
+    if (isAnyDragging) return; // Don't sync physics while user is dragging
+
     const currentPositions = positions;
     const headsWithPhysicsY = localHeads.map(h => {
       const existing = currentPositions.find(p => p.id === h.id);
@@ -478,10 +499,11 @@ export function VotingScreen({
     // Trigger simulation to resolve any overlaps
     setTimeout(() => triggerSimulation(), 10);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localHeads, updateHeads]);
+  }, [localHeads, updateHeads, isAnyDragging]);
 
   // Handle drag to spectrum from unplaced area
   const handleDragToSpectrum = useCallback((id: string, x: number, y: number) => {
+    setIsAnyDragging(false); // Drag ended
     onVote(id, x);
     setLocalHeads(prev => {
       const existing = prev.find(h => h.id === id);
@@ -490,6 +512,7 @@ export function VotingScreen({
       }
       return [...prev, { id, x, y, vx: 0, vy: 0 }];
     });
+    // Re-trigger physics after drag settles
     setTimeout(() => {
       triggerSimulation();
     }, 50);
@@ -497,13 +520,15 @@ export function VotingScreen({
 
   // Handle drag end within spectrum - receives final position directly
   const handleDragEndWithinSpectrum = useCallback((id: string, x: number, y: number) => {
+    setIsAnyDragging(false); // Drag ended
     onVote(id, x);
     setLocalHeads(prev => {
       const newHeads = prev.map(h => h.id === id ? { ...h, x, y, vy: 0 } : h);
       updateHeads(newHeads);
-      triggerSimulation();
       return newHeads;
     });
+    // Re-trigger physics after drag settles
+    setTimeout(() => triggerSimulation(), 50);
   }, [onVote, updateHeads, triggerSimulation]);
 
   const unplacedTargets = targets.filter(t => !votes.find(v => v.target_id === t.id));
@@ -602,6 +627,7 @@ export function VotingScreen({
                   containerHeight={containerSize.height}
                   spectrumRef={spectrumRef}
                   onDragEnd={handleDragEndWithinSpectrum}
+                  onDragStateChange={setIsAnyDragging}
                 />
               );
             })}
