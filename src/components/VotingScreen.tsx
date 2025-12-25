@@ -424,17 +424,14 @@ export function VotingScreen({
     votesSyncTimeoutRef.current = setTimeout(() => {
       const newPlaced = votes.map(v => {
         const existing = localHeads.find(h => h.id === v.target_id);
-        const updated = {
+        return {
           id: v.target_id,
           x: v.position,
           y: existing?.y ?? 0,
           vx: 0,
           vy: existing?.vy ?? 0,
         };
-        console.log(`[votes sync effect] ${v.target_id}: x changed from ${existing?.x ?? 'new'} to ${v.position}, y=${updated.y}`);
-        return updated;
       });
-      console.log(`[votes sync effect] Syncing ${newPlaced.length} votes to localHeads`);
       setLocalHeads(newPlaced);
     }, 100); // Debounce: wait 100ms for more updates before syncing
 
@@ -471,17 +468,12 @@ export function VotingScreen({
     const currentPositions = positions;
     const headsWithPhysicsY = localHeads.map(h => {
       const existing = currentPositions.find(p => p.id === h.id);
-      const result = {
+      return {
         ...h,
         y: existing?.y ?? h.y,
         vy: existing?.vy ?? h.vy,
       };
-      if (existing?.y !== h.y) {
-        console.log(`[sync effect] ${h.id}: y overridden from ${h.y} to ${result.y} (physics)`);
-      }
-      return result;
     });
-    console.log(`[sync effect] Syncing ${headsWithPhysicsY.length} heads to physics`);
     updateHeads(headsWithPhysicsY);
     // Trigger simulation to resolve any overlaps
     setTimeout(() => triggerSimulation(), 10);
