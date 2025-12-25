@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, PanInfo } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Participant, Vote } from '@/lib/types';
@@ -37,7 +37,9 @@ function useForceSimulation(
   const animationRef = useRef<number | null>(null);
   const positionsRef = useRef<PlacedHead[]>([]);
   const configRef = useRef({ containerWidth, containerHeight, headSize });
-  
+  const frameTimeRef = useRef<number>(0);
+  const TARGET_FRAME_TIME = 33; // 30fps throttle
+
   // Keep config ref up to date
   useEffect(() => {
     configRef.current = { containerWidth, containerHeight, headSize };
@@ -49,35 +51,46 @@ function useForceSimulation(
     setPositions(heads);
   }, []);
 
-  // Simulation step function
+  // Simulation step function - throttled to 30fps for mobile
   const simulateStep = useCallback(() => {
+    const now = performance.now();
+    const deltaTime = now - frameTimeRef.current;
+
+    // Throttle: only run simulation every 33ms (30fps) instead of 60fps
+    if (deltaTime < TARGET_FRAME_TIME && frameTimeRef.current > 0) {
+      return true; // Still have movement, continue RAF loop
+    }
+    frameTimeRef.current = now;
+
     const { containerWidth: cw, containerHeight: ch, headSize: hs } = configRef.current;
     if (cw === 0) return false;
-    
+
     const current = [...positionsRef.current];
     const padding = 8;
     const minDistance = hs + padding;
-    
+    let hasMovement = false;
+
     // Apply forces
     for (let i = 0; i < current.length; i++) {
       const head = current[i];
-      
+
       // Collision with other heads
       for (let j = i + 1; j < current.length; j++) {
         const other = current[j];
-        
+
         const dx = (other.x - head.x) * cw / 100;
         const dy = (other.y - head.y) * ch / 200; // y is -100 to 100
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (distance < minDistance) {
           // Strong repulsion force when overlapping
           const overlap = minDistance - distance;
           const pushStrength = overlap * 0.3;
-          
+          hasMovement = true;
+
           if (distance === 0) {
             // If exactly overlapping, push in deterministic alternating directions
-            const angle = (i * 1.33); 
+            const angle = (i * 1.33);
             head.vy += Math.sin(angle) * 2;
             other.vy -= Math.sin(angle) * 2;
           } else {
@@ -88,23 +101,26 @@ function useForceSimulation(
           }
         }
       }
-      
+
       // Damping
       head.vy *= 0.6;
-      
+
       // Apply velocity (convert pixels to percentage)
       head.y += (head.vy / ch) * 200;
-      
+
       // Clamp Y to container bounds
       const maxYPct = 100 - (hs / ch) * 100;
       head.y = Math.max(-maxYPct, Math.min(maxYPct, head.y));
+
+      // Check for continued movement
+      if (Math.abs(head.vy) > 0.05) {
+        hasMovement = true;
+      }
     }
-    
+
     positionsRef.current = current;
     setPositions([...current]);
-    
-    // Return whether there's still movement
-    const hasMovement = current.some(h => Math.abs(h.vy) > 0.05);
+
     return hasMovement;
   }, []);
 
@@ -135,13 +151,14 @@ function useForceSimulation(
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
     }
+    frameTimeRef.current = 0; // Reset throttle timer on trigger
     animationRef.current = requestAnimationFrame(runSimulation);
   }, [runSimulation]);
 
   return { positions, triggerSimulation, updateHeads };
 }
 
-// Draggable head component with grow effect
+// Draggable head component with grow effect - memoized to prevent unnecessary re-renders
 function DraggableHead({
   participant,
   index,
@@ -157,19 +174,24 @@ function DraggableHead({
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const bgColor = getAvatarColor(index);
+  const spectrumRectRef = useRef<DOMRect | null>(null);
 
   const handleDragStart = () => {
     setIsDragging(true);
+    // Cache the rect at drag start, not during move
+    if (spectrumRef.current) {
+      spectrumRectRef.current = spectrumRef.current.getBoundingClientRect();
+    }
   };
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     setIsDragging(false);
 
-    // Check if dropped on spectrum
-    if (spectrumRef.current) {
-      const rect = spectrumRef.current.getBoundingClientRect();
+    // Use cached rect instead of calling getBoundingClientRect() again
+    const rect = spectrumRectRef.current;
+    if (rect) {
       const point = info.point;
-      
+
       if (
         point.x >= rect.left &&
         point.x <= rect.right &&
@@ -181,6 +203,7 @@ function DraggableHead({
         onDragToSpectrum(participant.id, Math.max(2, Math.min(98, x)), Math.max(-95, Math.min(95, y)));
       }
     }
+    spectrumRectRef.current = null;
   };
 
   return (
@@ -190,13 +213,13 @@ function DraggableHead({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       animate={{ scale: isDragging ? 1.2 : 1 }}
-      style={{ zIndex: isDragging ? 100 : 1 }}
+      style={{ zIndex: isDragging ? 100 : 1, willChange: isDragging ? 'transform' : 'auto', transform: 'translate3d(0,0,0)' }}
       whileDrag={{ cursor: 'grabbing' }}
       className="flex flex-col items-center gap-1 cursor-grab touch-none"
     >
       <div
         className={`
-          w-14 h-14 rounded-full flex items-center justify-center 
+          w-14 h-14 rounded-full flex items-center justify-center
           font-bold text-white text-base shadow-lg transition-shadow
           ${isPlaced ? 'ring-2 ring-[var(--success)] ring-offset-2 ring-offset-transparent' : ''}
           ${isDragging ? 'shadow-2xl shadow-[var(--primary)]/30' : ''}
@@ -217,7 +240,16 @@ function DraggableHead({
   );
 }
 
-// Placed head on spectrum (draggable within spectrum)
+// Memoize to prevent unnecessary re-renders when parent updates
+const DraggableHeadMemo = React.memo(DraggableHead, (prev, next) => {
+  return (
+    prev.participant.id === next.participant.id &&
+    prev.index === next.index &&
+    prev.isPlaced === next.isPlaced
+  );
+});
+
+// Placed head on spectrum (draggable within spectrum) - memoized
 function PlacedHeadOnSpectrum({
   participant,
   position,
@@ -239,6 +271,7 @@ function PlacedHeadOnSpectrum({
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const lastPositionRef = useRef({ x: position, y: yPercent });
+  const spectrumRectRef = useRef<DOMRect | null>(null);
   const bgColor = getAvatarColor(index);
   const headSize = 56;
 
@@ -248,11 +281,16 @@ function PlacedHeadOnSpectrum({
 
   const handleDragStart = () => {
     setIsDragging(true);
+    // Cache rect at drag start
+    if (spectrumRef.current) {
+      spectrumRectRef.current = spectrumRef.current.getBoundingClientRect();
+    }
   };
 
   const handleDrag = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (spectrumRef.current) {
-      const parentRect = spectrumRef.current.getBoundingClientRect();
+    // Use cached rect if available, otherwise fall back
+    const parentRect = spectrumRectRef.current || spectrumRef.current?.getBoundingClientRect();
+    if (parentRect) {
       const x = ((info.point.x - parentRect.left) / parentRect.width) * 100;
       const y = (((info.point.y - (parentRect.top + parentRect.height / 2)) / (parentRect.height / 2))) * 100;
       lastPositionRef.current = {
@@ -264,8 +302,9 @@ function PlacedHeadOnSpectrum({
 
   const handleDragEndEvent = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     setIsDragging(false);
-    if (spectrumRef.current) {
-      const parentRect = spectrumRef.current.getBoundingClientRect();
+    // Use cached rect
+    const parentRect = spectrumRectRef.current || spectrumRef.current?.getBoundingClientRect();
+    if (parentRect) {
       const x = ((info.point.x - parentRect.left) / parentRect.width) * 100;
       const y = (((info.point.y - (parentRect.top + parentRect.height / 2)) / (parentRect.height / 2))) * 100;
       onDragEnd(
@@ -276,34 +315,40 @@ function PlacedHeadOnSpectrum({
     } else {
       onDragEnd(participant.id, lastPositionRef.current.x, lastPositionRef.current.y);
     }
+    spectrumRectRef.current = null;
   };
 
   const xPos = (position / 100) * containerWidth - headSize / 2;
   const yPos = (containerHeight / 2) + (yPercent * containerHeight / 200) - headSize / 2;
+
+  // Memoize drag constraints - only recalculate when positions change
+  const dragConstraints = useMemo(() => ({
+    left: -xPos,
+    right: containerWidth - xPos - headSize,
+    top: -yPos,
+    bottom: containerHeight - yPos - headSize
+  }), [xPos, yPos, containerWidth, containerHeight]);
 
   return (
     <motion.div
       drag
       dragMomentum={false}
       dragElastic={0}
-      dragConstraints={{ 
-        left: -xPos, 
-        right: containerWidth - xPos - headSize,
-        top: -yPos,
-        bottom: containerHeight - yPos - headSize
-      }}
+      dragConstraints={dragConstraints}
       onDragStart={handleDragStart}
       onDrag={handleDrag}
       onDragEnd={handleDragEndEvent}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: isDragging ? 1.2 : 1, opacity: 1 }}
-      style={{ 
+      style={{
         position: 'absolute',
         left: xPos,
         top: yPos,
         zIndex: isDragging ? 100 : 10,
         width: headSize,
         height: headSize,
+        willChange: isDragging ? 'transform' : 'auto',
+        transform: 'translate3d(0,0,0)'
       }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       className="cursor-grab active:cursor-grabbing touch-none"
@@ -315,8 +360,8 @@ function PlacedHeadOnSpectrum({
           backgroundImage: participant.avatar_url ? `url(${participant.avatar_url})` : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          boxShadow: isDragging 
-            ? '0 12px 30px rgba(0,0,0,0.5), 0 0 20px rgba(91, 164, 212, 0.4)' 
+          boxShadow: isDragging
+            ? '0 12px 30px rgba(0,0,0,0.5), 0 0 20px rgba(91, 164, 212, 0.4)'
             : '0 4px 15px rgba(0,0,0,0.3)',
         }}
       >
@@ -325,6 +370,17 @@ function PlacedHeadOnSpectrum({
     </motion.div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders when only other participants move
+const PlacedHeadOnSpectrumMemo = React.memo(PlacedHeadOnSpectrum, (prev, next) => {
+  return (
+    prev.participant.id === next.participant.id &&
+    prev.position === next.position &&
+    prev.yPercent === next.yPercent &&
+    prev.containerWidth === next.containerWidth &&
+    prev.containerHeight === next.containerHeight
+  );
+});
 
 export function VotingScreen({
   category,
@@ -356,19 +412,37 @@ export function VotingScreen({
   // Track placed heads with positions
   const [localHeads, setLocalHeads] = useState<PlacedHead[]>(initialPlacedHeads);
 
-  // Sync with votes when they change externally
+  // Debounce external vote syncs to batch updates (100ms delay)
+  const votesSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync with votes when they change externally (debounced)
   useEffect(() => {
-    const newPlaced = votes.map(v => {
-      const existing = localHeads.find(h => h.id === v.target_id);
-      return {
-        id: v.target_id,
-        x: v.position,
-        y: existing?.y ?? 0,
-        vx: 0,
-        vy: existing?.vy ?? 0,
-      };
-    });
-    setLocalHeads(newPlaced);
+    if (votesSyncTimeoutRef.current) {
+      clearTimeout(votesSyncTimeoutRef.current);
+    }
+
+    votesSyncTimeoutRef.current = setTimeout(() => {
+      const newPlaced = votes.map(v => {
+        const existing = localHeads.find(h => h.id === v.target_id);
+        const updated = {
+          id: v.target_id,
+          x: v.position,
+          y: existing?.y ?? 0,
+          vx: 0,
+          vy: existing?.vy ?? 0,
+        };
+        console.log(`[votes sync effect] ${v.target_id}: x changed from ${existing?.x ?? 'new'} to ${v.position}, y=${updated.y}`);
+        return updated;
+      });
+      console.log(`[votes sync effect] Syncing ${newPlaced.length} votes to localHeads`);
+      setLocalHeads(newPlaced);
+    }, 100); // Debounce: wait 100ms for more updates before syncing
+
+    return () => {
+      if (votesSyncTimeoutRef.current) {
+        clearTimeout(votesSyncTimeoutRef.current);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [votes]);
 
@@ -397,12 +471,17 @@ export function VotingScreen({
     const currentPositions = positions;
     const headsWithPhysicsY = localHeads.map(h => {
       const existing = currentPositions.find(p => p.id === h.id);
-      return {
+      const result = {
         ...h,
         y: existing?.y ?? h.y,
         vy: existing?.vy ?? h.vy,
       };
+      if (existing?.y !== h.y) {
+        console.log(`[sync effect] ${h.id}: y overridden from ${h.y} to ${result.y} (physics)`);
+      }
+      return result;
     });
+    console.log(`[sync effect] Syncing ${headsWithPhysicsY.length} heads to physics`);
     updateHeads(headsWithPhysicsY);
     // Trigger simulation to resolve any overlaps
     setTimeout(() => triggerSimulation(), 10);
@@ -430,9 +509,9 @@ export function VotingScreen({
     setLocalHeads(prev => {
       const newHeads = prev.map(h => h.id === id ? { ...h, x, y, vy: 0 } : h);
       updateHeads(newHeads);
+      triggerSimulation();
       return newHeads;
     });
-    setTimeout(() => triggerSimulation(), 50);
   }, [onVote, updateHeads, triggerSimulation]);
 
   const unplacedTargets = targets.filter(t => !votes.find(v => v.target_id === t.id));
@@ -519,9 +598,9 @@ export function VotingScreen({
               const participant = targets.find(t => t.id === head.id);
               if (!participant) return null;
               const idx = targets.findIndex(t => t.id === head.id);
-              
+
               return (
-                <PlacedHeadOnSpectrum
+                <PlacedHeadOnSpectrumMemo
                   key={head.id}
                   participant={participant}
                   position={head.x}
@@ -558,7 +637,7 @@ export function VotingScreen({
               </p>
             <div className="flex flex-wrap justify-center gap-3">
                 {unplacedTargets.map((target) => (
-                <DraggableHead
+                <DraggableHeadMemo
                     key={target.id}
                     participant={target}
                   index={targets.findIndex(t => t.id === target.id)}

@@ -215,10 +215,10 @@ function PeekerAvatar({
         damping: 20,
       }}
       className={props.className}
-      style={{ transformOrigin: 'center center' }}
+      style={{ transformOrigin: 'center center', willChange: 'transform', transform: 'translate3d(0,0,0)' }}
     >
       <div
-        className="w-48 h-48 rounded-full bg-cover bg-center shadow-2xl border-4 border-white/30"
+        className="w-48 h-48 rounded-full bg-cover bg-center shadow-2xl"
         style={{
           backgroundImage: peeker.avatar_url ? `url(${peeker.avatar_url})` : undefined,
           backgroundColor: peeker.avatar_url ? undefined : getAvatarColor(colorIndex),
@@ -252,6 +252,9 @@ function BoardContent() {
   // Peeker state - random head that peeks in from edges
   const [peeker, setPeeker] = useState<Participant | null>(null);
   const [peekerPosition, setPeekerPosition] = useState<'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>('left');
+
+  // Debounce vote updates to batch queries (100ms)
+  const voteUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load session data
   const aggregateVotes = useCallback((votes: Vote[]) => {
@@ -365,7 +368,13 @@ function BoardContent() {
           filter: `session_id=eq.${session.id}`,
         },
         () => {
-          loadVotes(session.id);
+          // Debounce vote updates: batch multiple rapid changes into single query
+          if (voteUpdateTimeoutRef.current) {
+            clearTimeout(voteUpdateTimeoutRef.current);
+          }
+          voteUpdateTimeoutRef.current = setTimeout(() => {
+            loadVotes(session.id);
+          }, 100); // Wait 100ms for more updates before querying
         }
       )
       .subscribe();
@@ -815,13 +824,6 @@ function SpectrumView({
                     <p className="text-lg font-bold text-white drop-shadow-md truncate">
                       {p.name.split(' ')[0]}
                     </p>
-                    <div className="w-full h-1 bg-white/20 rounded-full mt-1 overflow-hidden">
-                      <motion.div 
-                        className="h-full bg-[var(--primary)]"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${pos.x}%` }}
-                      />
-                    </div>
                   </div>
                 </div>
                 </motion.div>
